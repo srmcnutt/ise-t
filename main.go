@@ -1,10 +1,26 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 )
+
+var (
+	ls    bool
+	certs bool
+)
+
+func main() {
+	flag.Parse()
+	banner()
+	getEnv()
+}
+func init() {
+	flag.BoolVar(&ls, "ls", false, "Lists nodes in deployment")
+	flag.BoolVar(&certs, "certs", false, "Lists certificates for nodes in deployment")
+
+}
 
 func getEnv() {
 	var ise_pan string = os.Getenv("ISE_PAN")
@@ -29,15 +45,20 @@ func getEnv() {
 }
 
 func banner() {
-	b, err := ioutil.ReadFile("art.txt")
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-	fmt.Println(string(b))
+	fmt.Println(art)
 	return
 }
 
-func main() {
-	banner()
-	getEnv()
-}
+var art string = `
+
+██╗███████╗███████╗      ████████╗
+██║██╔════╝██╔════╝      ╚══██╔══╝
+██║███████╗█████╗  █████╗   ██║   
+██║╚════██║██╔══╝  ╚════╝   ██║   
+██║███████║███████╗         ██║   
+╚═╝╚══════╝╚══════╝         ╚═╝  v0.1
+
+ISE Certificate toolbox 
+ - by Steven McNutt, CCIE #6495. @densem0de on twitterz
+
+`

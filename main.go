@@ -79,9 +79,15 @@ func getNodes() {
 	if err != nil {
 		panic(err)
 	}
+
+	// build header
+	req.Header = http.Header{
+		"Content-Type": {"application/json"},
+		"Accept":       {"application/json"},
+	}
+
+	// add basic authentication to our header
 	req.SetBasicAuth(ise["user"], ise["password"])
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
 
 	// execute request & assign to res variable
 	res, err := client.Do(req)

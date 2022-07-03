@@ -15,7 +15,7 @@ ACME interface to provision certificates from:
 
 
 ## Usage
-- download the binary for your platform and architecture from the bin/:platform:/:arcitecture>: folder
+- download the binary for your platform and architecture from the bin/:platform:/:arcitecture: folder
 - set the following environment variables:
     ISE_PAN
     ISE_USER

@@ -15,11 +15,11 @@ ACME interface to provision certificates from:
 
 
 ## Usage
-- download the binary for your platform and architecture from the bin/:platform:/:arcitecture: folder
+- download the binary for your platform and architecture from the bin/:platform:/:architecture: folder
 - set the following environment variables:
-    ISE_PAN
-    ISE_USER
-    ISE_PASSWORD
+    - ISE_PAN
+    - ISE_USER
+    - ISE_PASSWORD
 - Run the app using the flags to select what operations you want.
 
 To view available operations run the app with the -h flag.

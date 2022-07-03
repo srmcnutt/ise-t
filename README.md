@@ -8,10 +8,10 @@ ISE Certificate toolbox is a small cli utility that performs some basic certific
 - Return a list of certificates expiring in x days
 - One shot disaster recovery export of all certificates
 
-Aspirational: ACME interface to provision certificates
-    from:
-        - Letsencrypt
-        - Active Directory
+Aspirational:
+ACME interface to provision certificates from:
+- Letsencrypt
+- Active Directory
 
 
 ## Usage

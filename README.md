@@ -1,4 +1,4 @@
-# ise-t
+# ISE-T
 ISE Certificate toolbox is a small cli utility that performs some basic certificate management tasks for Cisco Identity Services Engine.  It aims to lower the friction level of managing ISE certificates and is designed to be used either standalone or as part of a pipeline.
 
 ## What it does

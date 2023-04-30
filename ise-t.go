@@ -38,20 +38,25 @@ var ise = make(map[string]string)
 var endPoints = make(map[string]string)
 
 func main() {
-	var nodelist NodeList
+	var nodes NodeList
 	ise = getEnv()
 	flag.Parse()
 	banner()
 
 	// generate urls for api calls and store them
+	// endPoint = API endpoint
+	// the idea is to build a map of all the api endpoints we need to call
 	initEndPoints()
 
-	// TODO generalize api call action
-	r := iseCall(endPoints["nodes"], nodelist)
+	// get list of nodes in deployment
+	nodes = getNodes()
 
-	// test output
-	fmt.Printf("type is %T\n", r)
-	fmt.Println(r.SearchResult.Resources[0].Name)
+	// print list of nodes in deployment
+	fmt.Println("Total Nodes: ", nodes.SearchResult.Total)
+	for i := 0; i < len(nodes.SearchResult.Resources); i++ {
+		fmt.Println(nodes.SearchResult.Resources[i].Name)
+	}
+	
 }
 
 func init() {
@@ -92,12 +97,12 @@ func banner() {
 
 //initalize endpoint url map
 func initEndPoints() {
-	endPoints["nodes"] = fmt.Sprintf("https://%s/ers/config/node", ise["pan"])
+	endPoints["pan"] = fmt.Sprintf("https://%s/ers/config/node", ise["pan"])
 	return
 }
 
 // generic function to make rest api call to ISE and pass the body back
-func iseCall(url string, nodelist NodeList) NodeList {
+func iseCall(url string) []byte {
 
 	// make a transport
 	tr := &http.Transport{
@@ -129,76 +134,35 @@ func iseCall(url string, nodelist NodeList) NodeList {
 		panic(err)
 	}
 
-	// dump the header
-	fmt.Println(res)
 
-	//mdump the response body
+	// dump the header
+	//fmt.Println(res)
+
+	//response body
 	defer res.Body.Close()
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Println("Error while reading the response bytes:", err)
 	}
-
-	error := json.Unmarshal(b, &nodelist)
-	if error != nil {
-		log.Println(error)
-	}
-	//fmt.Println(j)
-	return nodelist
-
-	// fmt.Println(string(b))
-	// err := json.Unmarshal(b, &m)
-
+	
+	return  b
 }
 
 // enumerate all nodes in the deployment and build inital data structure
-func getNodes() {
-	// build url
-	url := endPoints["nodes"]
+func getNodes() NodeList {
+	//use our nodelist struct to store the response
+	var nodelist NodeList
 
-	// make a transport
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true},
+	// make the api call
+	res := iseCall(endPoints["pan"])
+
+	error := json.Unmarshal(res, &nodelist)
+	if error != nil {
+		log.Println(error)
 	}
-
-	// make a client
-	client := &http.Client{Transport: tr}
-
-	// set up request
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	// build header
-	req.Header = http.Header{
-		"Content-Type": {"application/json"},
-		"Accept":       {"application/json"},
-	}
-
-	// add basic authentication to our header
-	req.SetBasicAuth(ise["user"], ise["password"])
-
-	// execute request & assign to res variable
-	res, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	// dump the header
-	fmt.Println(res)
-
-	//dump the response body
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Println("Error while reading the response bytes:", err)
-	}
-	log.Println(string([]byte(body)))
-
+	
+	return nodelist
 }
 
 // get the system certificates for each node and append to data structure

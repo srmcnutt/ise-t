@@ -12,23 +12,50 @@ import (
 )
 
 var (
-	ls    bool
-	certs bool
+	ls bool
+	//certs bool
 )
 
 type NodeList struct {
 	SearchResult struct {
 		Total     int
-		Resources []struct {
-			Id   string
-			Name string
-			Link struct {
-				Rel  string
-				Href string
-				Type string
-			}
-		}
+		Resources []node
 	}
+}
+
+type node struct {
+	Id   string
+	Name string
+	Link struct {
+		Rel  string
+		Href string
+	}
+	Certs []Cert
+}
+
+type CertList struct {
+	Response []Cert
+}
+
+type Cert struct {
+	ID                        string `json:"id"`
+	FriendlyName              string `json:"friendlyName"`
+	SerialNumberDecimalFormat string `json:"serialNumberDecimalFormat"`
+	IssuedTo                  string `json:"issuedTo"`
+	IssuedBy                  string `json:"issuedBy"`
+	ValidFrom                 string `json:"validFrom"`
+	ExpirationDate            string `json:"expirationDate"`
+	UsedBy                    string `json:"usedBy"`
+	KeySize                   int    `json:"keySize"`
+	GroupTag                  string `json:"groupTag"`
+	SelfSigned                bool   `json:"selfSigned"`
+	SignatureAlgorithm        string `json:"signatureAlgorithm"`
+	PortalsUsingTheTag        string `json:"portalsUsingTheTag"`
+	Sha256Fingerprint         string `json:"sha256Fingerprint"`
+	Link                      struct {
+		Rel  string `json:"rel"`
+		Href string `json:"href"`
+	} `json:"link"`
 }
 
 // environment vars for connecting to ISE
@@ -38,7 +65,7 @@ var ise = make(map[string]string)
 var endPoints = make(map[string]string)
 
 func main() {
-	var nodes NodeList
+	//var iseNodes nodes
 	ise = getEnv()
 	flag.Parse()
 	banner()
@@ -49,19 +76,24 @@ func main() {
 	initEndPoints()
 
 	// get list of nodes in deployment
-	nodes = getNodes()
+	iseNodes := getNodes()
+	//fmt.Println(iseNodes)
 
 	// print list of nodes in deployment
-	fmt.Println("Total Nodes: ", nodes.SearchResult.Total)
-	for i := 0; i < len(nodes.SearchResult.Resources); i++ {
-		fmt.Println(nodes.SearchResult.Resources[i].Name)
+	//fmt.Println("Total Nodes: ", nodes.SearchResult.Total)
+
+	// for i := 0; i < len(nodes.SearchResult.Resources); i++ {
+	// 	fmt.Println(nodes.SearchResult.Resources[i].Name)
+	// }
+	for i := range iseNodes {
+		fmt.Println("found Node: ", iseNodes[i].Name)
 	}
-	
+	getCertificate(iseNodes[1].Name, iseNodes)
 }
 
 func init() {
 	flag.BoolVar(&ls, "ls", false, "Lists nodes in deployment")
-	flag.BoolVar(&certs, "certs", false, "Lists certificates for nodes in deployment")
+	//flag.BoolVar(&certs, "certs", false, "Lists certificates for nodes in deployment")
 }
 
 // read in environment vars to connect to ISE
@@ -95,9 +127,10 @@ func banner() {
 	return
 }
 
-//initalize endpoint url map
+// initalize endpoint url map
 func initEndPoints() {
 	endPoints["pan"] = fmt.Sprintf("https://%s/ers/config/node", ise["pan"])
+	endPoints["systemCerts"] = fmt.Sprintf("https://%s/api/v1/certs/system-certificate/", ise["pan"])
 	return
 }
 
@@ -134,7 +167,6 @@ func iseCall(url string) []byte {
 		panic(err)
 	}
 
-
 	// dump the header
 	//fmt.Println(res)
 
@@ -145,12 +177,28 @@ func iseCall(url string) []byte {
 	if err != nil {
 		log.Println("Error while reading the response bytes:", err)
 	}
-	
-	return  b
+
+	return b
+}
+
+// return the index for a node using it's name
+func getNodeByName(s string, n []node) int {
+	for i := range n {
+		if s == n[i].Name {
+			fmt.Println("Node located!")
+			fmt.Println(n[i])
+			fmt.Println("Returning index ", i)
+			return i
+
+		}
+	}
+	fmt.Println("No match found")
+	panic("node not found in database")
+	return 999
 }
 
 // enumerate all nodes in the deployment and build inital data structure
-func getNodes() NodeList {
+func getNodes() []node {
 	//use our nodelist struct to store the response
 	var nodelist NodeList
 
@@ -161,12 +209,42 @@ func getNodes() NodeList {
 	if error != nil {
 		log.Println(error)
 	}
-	
-	return nodelist
+
+	// build a slice of node items using the node struct
+	var x []node
+	for i := range nodelist.SearchResult.Resources {
+
+		x = append(x, nodelist.SearchResult.Resources[i])
+
+	}
+
+	return x
 }
 
-// get the system certificates for each node and append to data structure
-func getCertificates() {
+// get the system certificate for a node, append to node data structure, return
+func getCertificate(s string, n []node) {
+
+	// build out our request string
+	url := endPoints["systemCerts"] + s
+
+	// make the api call
+	res := iseCall(url)
+
+	// make api call
+	var certs CertList
+	error := json.Unmarshal(res, &certs)
+	if error != nil {
+		log.Println(error)
+	}
+
+	// get index and and graft the cert list on to the node record
+	index := getNodeByName(s, n)
+	n[index].Certs = certs.Response
+
+	for _, v := range n[index].Certs {
+		fmt.Printf("\n\n\n")
+		fmt.Println(v)
+	}
 
 }
 
